@@ -3,6 +3,7 @@ import { fetchUsers, deleteUser } from "../api";
 import { Link } from "react-router-dom";
 import Skeleton from "./Skeleton";
 import { toast } from "react-toastify";
+import Pagination from "./Pagination";
 import "react-toastify/dist/ReactToastify.css";
 
 const Dashboard: React.FC = () => {
@@ -17,6 +18,8 @@ const Dashboard: React.FC = () => {
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState("");
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const usersPerPage = 10;
 
   useEffect(() => {
     fetchUsers().then((data) => {
@@ -32,6 +35,20 @@ const Dashboard: React.FC = () => {
       toast.success("User deleted successfully!");
     }
   };
+
+  // Pagination Logic
+  const filteredUsers = users.filter(
+    (user) =>
+      user.name.toLowerCase().includes(search.toLowerCase()) &&
+      (filterRole ? user.role === filterRole : true)
+  );
+
+  const totalUsers = filteredUsers.length;
+  const startIndex = (currentPage - 1) * usersPerPage;
+  const paginatedUsers = filteredUsers.slice(
+    startIndex,
+    startIndex + usersPerPage
+  );
 
   return (
     <div className="max-w-7xl mx-auto w-full p-6 bg-gray-50 min-h-screen">
@@ -71,35 +88,30 @@ const Dashboard: React.FC = () => {
       {loading ? (
         <Skeleton className="w-full h-32 mt-6" />
       ) : (
-        <div className="mt-8 overflow-x-auto">
-          <table className="w-full border-collapse text-sm md:text-base bg-white shadow-lg rounded-2xl overflow-hidden">
-            <thead>
-              <tr className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
-                <th className="border-b p-4 font-semibold tracking-wide uppercase">
-                  ID
-                </th>
-                <th className="border-b p-4 font-semibold tracking-wide uppercase">
-                  Name
-                </th>
-                <th className="border-b p-4 font-semibold tracking-wide uppercase">
-                  Email
-                </th>
-                <th className="border-b p-4 font-semibold tracking-wide uppercase">
-                  Role
-                </th>
-                <th className="border-b p-4 font-semibold tracking-wide uppercase">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {users
-                .filter(
-                  (user) =>
-                    user.name.toLowerCase().includes(search.toLowerCase()) &&
-                    (filterRole ? user.role === filterRole : true)
-                )
-                .map((user, index) => (
+        <>
+          <div className="mt-8 overflow-x-auto">
+            <table className="w-full border-collapse text-sm md:text-base bg-white shadow-lg rounded-2xl overflow-hidden">
+              <thead>
+                <tr className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+                  <th className="border-b p-4 font-semibold tracking-wide uppercase">
+                    ID
+                  </th>
+                  <th className="border-b p-4 font-semibold tracking-wide uppercase">
+                    Name
+                  </th>
+                  <th className="border-b p-4 font-semibold tracking-wide uppercase">
+                    Email
+                  </th>
+                  <th className="border-b p-4 font-semibold tracking-wide uppercase">
+                    Role
+                  </th>
+                  <th className="border-b p-4 font-semibold tracking-wide uppercase">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedUsers.map((user, index) => (
                   <tr
                     key={user.id}
                     className={`text-center ${
@@ -124,25 +136,31 @@ const Dashboard: React.FC = () => {
                     </td>
                     <td className="border-b p-4 flex justify-center gap-4">
                       <Link to={`/edit/${user.id}`}>
-                        <button
-                          onClick={() => toast.info("Editing user...")}
-                          className="bg-gradient-to-r from-green-400 to-green-500 text-white px-4 py-2 rounded-xl shadow-md hover:from-green-500 hover:to-green-600 transition-transform transform hover:scale-105"
-                        >
+                        <button className="bg-green-500 text-white px-4 py-2 rounded-xl hover:bg-green-600 transition">
                           Edit
                         </button>
                       </Link>
                       <button
                         onClick={() => handleDelete(user.id)}
-                        className="bg-gradient-to-r from-red-400 to-red-500 text-white px-4 py-2 rounded-xl shadow-md hover:from-red-500 hover:to-red-600 transition-transform transform hover:scale-105"
+                        className="bg-red-500 text-white px-4 py-2 rounded-xl hover:bg-red-600 transition"
                       >
                         Delete
                       </button>
                     </td>
                   </tr>
                 ))}
-            </tbody>
-          </table>
-        </div>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination Component */}
+          <Pagination
+            totalUsers={totalUsers}
+            usersPerPage={usersPerPage}
+            currentPage={currentPage}
+            onPageChange={setCurrentPage}
+          />
+        </>
       )}
     </div>
   );
